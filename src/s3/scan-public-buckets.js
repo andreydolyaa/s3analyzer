@@ -3,6 +3,7 @@ import {
   ListBucketsCommand,
   GetBucketLocationCommand,
   GetPublicAccessBlockCommand,
+  GetBucketAclCommand,
 } from "@aws-sdk/client-s3";
 import { S3 } from "../maps/index.js";
 import { Logger } from "../core/logger.js";
@@ -48,10 +49,14 @@ export async function scanPublicBuckets() {
     );
 
     evaluatePublicBuckets(bucket.Name, PublicAccessBlockConfiguration);
+    
+    const x = await call(new GetBucketAclCommand({ Bucket: bucket.Name }), client);
+    console.log("TEST:", x.Grants);
+    
   }
 }
 
-export function evaluatePublicBuckets(bucketName, data) {
+export async function evaluatePublicBuckets(bucketName, data) {
   const issues = [];
   if (!data.BlockPublicAcls) issues.push(S3.msg.blockPublicAcls);
   if (!data.IgnorePublicAcls) issues.push(S3.msg.ignorePublicAcls);
