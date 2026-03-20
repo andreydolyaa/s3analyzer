@@ -4,12 +4,15 @@ import {
   GetBucketLocationCommand,
   GetPublicAccessBlockCommand,
 } from "@aws-sdk/client-s3";
+import { S3 } from "../maps/index.js";
 
 const clients = {};
 
 function getClient(locationConstraint) {
   if (!clients[locationConstraint]) {
-    clients[locationConstraint] = new S3Client({ region: locationConstraint });
+    clients[locationConstraint] = new S3Client({
+      region: locationConstraint,
+    });
   }
   return clients[locationConstraint];
 }
@@ -28,18 +31,35 @@ export async function scanPublicBuckets() {
 
   for (const bucket of Buckets) {
     const { LocationConstraint } = await call(
-      new GetBucketLocationCommand({ Bucket: bucket.Name }),
+      new GetBucketLocationCommand({
+        Bucket: bucket.Name,
+      }),
     );
 
     const client = getClient(LocationConstraint) || "us-east-1";
 
     const { PublicAccessBlockConfiguration } = await call(
-      new GetPublicAccessBlockCommand({ Bucket: bucket.Name }),
+      new GetPublicAccessBlockCommand({
+        Bucket: bucket.Name,
+      }),
       client,
     );
 
-    console.log(bucket.Name);
-    console.log(PublicAccessBlockConfiguration);
-    console.log();
+    evaluatePublicBuckets(bucket.Name, PublicAccessBlockConfiguration)
+  }
+}
+
+export function evaluatePublicBuckets(bucketName, data) {
+  const issues = [];
+  if (!data.BlockPublicAcls) issues.push(S3.msg.blockPublicAcls);
+  if (!data.IgnorePublicAcls) issues.push(S3.msg.ignorePublicAcls);
+  if (!data.BlockPublicPolicy) issues.push(S3.msg.blockPublicPolicy);
+  if (!data.RestrictPublicBuckets) issues.push(S3.msg.restrictPublicBuckets);
+
+  if (!issues.length) {
+    console.log(`[OK] ${bucketName} - ${S3.msg.protected}`);
+  } else {
+    console.log(`[CRITICAL] ${bucketName} - ${S3.msg.notProtected}:`);
+    issues.forEach((issue) => console.log(issue));
   }
 }
