@@ -5,7 +5,9 @@ import {
   GetPublicAccessBlockCommand,
 } from "@aws-sdk/client-s3";
 import { S3 } from "../maps/index.js";
+import { Logger } from "../core/logger.js";
 
+const logger = new Logger("S3");
 const clients = {};
 
 function getClient(locationConstraint) {
@@ -45,7 +47,7 @@ export async function scanPublicBuckets() {
       client,
     );
 
-    evaluatePublicBuckets(bucket.Name, PublicAccessBlockConfiguration)
+    evaluatePublicBuckets(bucket.Name, PublicAccessBlockConfiguration);
   }
 }
 
@@ -57,9 +59,8 @@ export function evaluatePublicBuckets(bucketName, data) {
   if (!data.RestrictPublicBuckets) issues.push(S3.msg.restrictPublicBuckets);
 
   if (!issues.length) {
-    console.log(`[OK] ${bucketName} - ${S3.msg.protected}`);
+    logger.log(`${bucketName} [0 issues found]`, [S3.msg.protected]);
   } else {
-    console.log(`[CRITICAL] ${bucketName} - ${S3.msg.notProtected}:`);
-    issues.forEach((issue) => console.log(issue));
+    logger.log(`${bucketName} [${issues.length} issues found]`, issues);
   }
 }

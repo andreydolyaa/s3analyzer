@@ -30,28 +30,15 @@ export const logger = {
   debug: (msg, ctx) => log("DEBUG", msg, ctx),
 };
 
-export function createScanLogger(module, resourceName) {
-  return {
-    start: () => {
-      console.log(
-        `\n${chalk.bold.blue(">")} ${chalk.bold.white(`[${module}]`)} ${chalk.bold.yellow(resourceName)}`,
-      );
-    },
-    finding: (status, check, detail) => {
-      const statusLabel =
-        status === "OK"
-          ? chalk.green(`[${status}]`)
-          : status === "CRITICAL"
-            ? chalk.red(`[${status}]`)
-            : status === "HIGH"
-              ? chalk.red(`[${status}]`)
-              : chalk.yellow(`[${status}]`);
-      console.log(`  ${statusLabel} ${chalk.bold(check)}: ${detail}`);
-    },
-    summary: (passed, failed) => {
-      console.log(
-        `  ${chalk.bold("Summary:")} ${chalk.green(`${passed} passed`)} | ${chalk.red(`${failed} failed`)}`,
-      );
-    },
-  };
+export class Logger {
+  constructor(module) {
+    this.module = module;
+  }
+  log(resource, messages = []) {
+    console.log(
+      `${chalk.bold.blue(">")} ${chalk.bold.white(`[${this.module}]`)} ${chalk.bold.yellow(resource)}`,
+    );
+    messages.forEach((message) => console.log(`\t- ${message}`));
+    console.log("\n");
+  }
 }
